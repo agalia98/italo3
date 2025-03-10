@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Italo Event Tracker</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .container { display: flex; }
+    .sidebar { width: 200px; background: #333; color: white; height: 100vh; }
+    .sidebar-header { background: #cc0000; padding: 15px; text-align: center; }
+    .sidebar-menu { padding: 0; }
+    .sidebar-menu div { padding: 12px 15px; cursor: pointer; }
+    .sidebar-menu div:hover, .sidebar-menu div.active { background: #444; }
+    
+    .main { flex: 1; }
+    .header { background: #cc0000; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .content { padding: 20px; background: #f5f5f5; height: calc(100vh - 60px); overflow: auto; }
+    
+    .card { background: white; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 15px; margin-bottom: 20px; }
+    .stats { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
+    .stat-card { background: white; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 15px; flex: 1; }
+    .stat-value { font-size: 24px; font-weight: bold; }
+    .red { color: #cc0000; }
+    
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f2f2f2; text-align: left; padding: 10px; }
+    td { padding: 10px; border-bottom: 1px solid #eee; }
+    tr:hover { background: #f9f9f9; }
+    
+    .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+    .form-group { flex: 1; }
+    label { display: block; margin-bottom: 5px; }
+    input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+    
+    .btn { padding: 8px 15px; background: #cc0000; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-alt { background: #f2f2f2; color: #333; border: 1px solid #ddd; }
+    
+    .badge { padding: 3px 8px; border-radius: 12px; font-size: 12px; }
+    .badge-malfunction { background: #fee2e2; color: #b91c1c; }
+    .badge-disruption { background: #fef3c7; color: #92400e; }
+    .badge-opportunity { background: #d1fae5; color: #047857; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-resolved { background: #d1fae5; color: #047857; }
+    
+    .hidden { display: none; }
+    
+    /* Login styles */
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f5f5f5;
+    }
+    
+    .login-card {
+      background: white;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 30px;
+      width: 350px;
+    }
+    
+    .login-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .login-header h1 {
+      color: #cc0000;
+      margin-bottom: 5px;
+    }
+    
+    .error-message {
+      color: #cc0000;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="login-screen" class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>ITALO Event Tracker</h1>
+      <p>Accesso al sistema di monitoraggio eventi</p>
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Inserisci la password">
+    </div>
+    <div style="margin-top: 20px;">
+      <button class="btn" style="width: 100%;" id="login-btn">Accedi</button>
+    </div>
+    <div id="error-message" class="error-message hidden">Password non corretta. Riprova.</div>
+  </div>
+</div>
+
+<!-- Main Container (hidden initially) -->
+<div id="app-container" class="container hidden">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">ITALO Event Tracker</div>
+    <div class="sidebar-menu">
+      <div data-page="dashboard" class="active">Dashboard</div>
+      <div data-page="events">Eventi</div>
+      <div data-page="new-event">Nuovo Evento</div>
+    </div>
+  </div>
+  
+  <!-- Main Content -->
+  <div class="main">
+    <!-- Header -->
+    <div class="header">
+      <h2 id="page-title">Dashboard</h2>
+      <span>Febbraio 2025</span>
+    </div>
+    
+    <!-- Content Area -->
+    <div class="content">
+      
+      <!-- Dashboard Page -->
+      <div id="dashboard-page">
+        <!-- Stats Cards -->
+        <div class="stats">
+          <div class="stat-card">
+            <div>Eventi Totali</div>
+            <div class="stat-value" id="total-events">0</div>
+          </div>
+          <div class="stat-card">
+            <div>Malfunzionamenti</div>
+            <div class="stat-value" id="total-malfunctions">0</div>
+          </div>
+          <div class="stat-card">
+            <div>Eventi Pendenti</div>
+            <div class="stat-value" id="pending-events">0</div>
+          </div>
+          <div class="stat-card">
+            <div>Area Manager</div>
+            <div class="stat-value" id="total-managers">4</div>
+          </div>
+        </div>
+        
+        <!-- Impact by Type -->
+        <div class="card">
+          <h3>Eventi per Tipo</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Numero</th>
+                <th>% sul Totale</th>
+              </tr>
+            </thead>
+            <tbody id="impact-table">
+              <!-- Filled by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Station Impact -->
+        <div class="card">
+          <h3>Top 5 Stazioni per Numero Eventi</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Stazione</th>
+                <th>Eventi</th>
+                <th>% sul Totale</th>
+              </tr>
+            </thead>
+            <tbody id="stations-table">
+              <!-- Filled by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Events Page -->
+      <div id="events-page" class="hidden">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3>Eventi <span id="event-count"></span></h3>
+            <button class="btn" id="add-event-btn">Nuovo Evento</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Stazione</th>
+                <th>Tipo</th>
+                <th>Dettaglio</th>
+                <th>Area Manager</th>
+                <th>Orario</th>
+                <th>Stato</th>
+              </tr>
+            </thead>
+            <tbody id="events-table">
+              <!-- Filled by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- New Event Page -->
+      <div id="new-event-page" class="hidden">
+        <div class="card">
+          <h3>Registra Nuovo Evento</h3>
+          <form id="event-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Data</label>
+                <input type="date" id="event-date" required>
+              </div>
+              <div class="form-group">
+                <label>Tipo Evento</label>
+                <select id="event-type" required>
+                  <option value="">Seleziona...</option>
+                  <option value="malfunction">Malfunzionamento</option>
+                  <option value="disruption">Disagio</option>
+                  <option value="opportunity">Opportunità</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Stazione</label>
+                <select id="event-station" required>
+                  <option value="">Seleziona...</option>
+                  <option value="0">Tutte</option>
+                  <option value="1">Milano Centrale</option>
+                  <option value="2">Bologna</option>
+                  <option value="3">Napoli Centrale</option>
+                  <option value="4">Firenze SMN</option>
+                  <option value="5">Venezia SL</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Area Manager</label>
+                <select id="event-manager" required>
+                  <option value="">Seleziona...</option>
+                  <option value="1">Alessio Messina</option>
+                  <option value="2">Francesco Barba</option>
+                  <option value="3">Leonardo Marsala</option>
+                  <option value="4">Luca Scalzo</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Orario Inizio</label>
+                <select id="event-start" required>
+                  <option value="">Seleziona...</option>
+                  <option value="00:00">00:00</option>
+                  <option value="01:00">01:00</option>
+                  <option value="02:00">02:00</option>
+                  <option value="03:00">03:00</option>
+                  <option value="04:00">04:00</option>
+                  <option value="05:00">05:00</option>
+                  <option value="06:00">06:00</option>
+                  <option value="07:00">07:00</option>
+                  <option value="08:00">08:00</option>
+                  <option value="09:00">09:00</option>
+                  <option value="10:00">10:00</option>
+                  <option value="11:00">11:00</option>
+                  <option value="12:00">12:00</option>
+                  <option value="13:00">13:00</option>
+                  <option value="14:00">14:00</option>
+                  <option value="15:00">15:00</option>
+                  <option value="16:00">16:00</option>
+                  <option value="17:00">17:00</option>
+                  <option value="18:00">18:00</option>
+                  <option value="19:00">19:00</option>
+                  <option value="20:00">20:00</option>
+                  <option value="21:00">21:00</option>
+                  <option value="22:00">22:00</option>
+                  <option value="23:00">23:00</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Orario Fine</label>
+                <select id="event-end" required>
+                  <option value="">Seleziona...</option>
+                  <option value="00:00">00:00</option>
+                  <option value="01:00">01:00</option>
+                  <option value="02:00">02:00</option>
+                  <option value="03:00">03:00</option>
+                  <option value="04:00">04:00</option>
+                  <option value="05:00">05:00</option>
+                  <option value="06:00">06:00</option>
+                  <option value="07:00">07:00</option>
+                  <option value="08:00">08:00</option>
+                  <option value="09:00">09:00</option>
+                  <option value="10:00">10:00</option>
+                  <option value="11:00">11:00</option>
+                  <option value="12:00">12:00</option>
+                  <option value="13:00">13:00</option>
+                  <option value="14:00">14:00</option>
+                  <option value="15:00">15:00</option>
+                  <option value="16:00">16:00</option>
+                  <option value="17:00">17:00</option>
+                  <option value="18:00">18:00</option>
+                  <option value="19:00">19:00</option>
+                  <option value="20:00">20:00</option>
+                  <option value="21:00">21:00</option>
+                  <option value="22:00">22:00</option>
+                  <option value="23:00">23:00</option>
+                  <option value="23:59">23:59</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Dettaglio</label>
+              <textarea id="event-detail" rows="3" required></textarea>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+              <button type="button" class="btn btn-alt" id="cancel-btn" style="margin-right: 10px;">Annulla</button>
+              <button type="submit" class="btn">Salva</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<script>
+  // Password di accesso
+  const SYSTEM_PASSWORD = "roberta2025";
+  
+  // Dati di esempio
+  const events = [
+    {
+      id: 1,
+      date: '2025-02-02',
+      stationId: 0, // tutte
+      areaManagerId: 2, // Francesco Barba
+      eventType: 'malfunction',
+      eventDetail: 'Blocco nazionale di tutte le BSS e PAB',
+      startTime: '14:00',
+      endTime: '20:00',
+      status: 'resolved'
+    },
+    {
+      id: 2,
+      date: '2025-02-05',
+      stationId: 1, // Milano Centrale
+      areaManagerId: 1, // Alessio Messina
+      eventType: 'malfunction',
+      eventDetail: 'No contanti in tutto il presidio',
+      startTime: '08:00',
+      endTime: '18:00',
+      status: 'resolved'
+    },
+    {
+      id: 3,
+      date: '2025-02-14',
+      stationId: 0, // tutte
+      areaManagerId: 2, // Francesco Barba
+      eventType: 'disruption',
+      eventDetail: 'Guasto impianti',
+      startTime: '08:00',
+      endTime: '16:00',
+      status: 'resolved'
+    },
+    {
+      id: 4,
+      date: '2025-02-13',
+      stationId: 4, // Firenze SMN
+      areaManagerId: 4, // Luca Scalzo
+      eventType: 'malfunction',
+      eventDetail: 'PAB 4 Firenze',
+      startTime: '09:00',
+      endTime: '18:00',
+      status: 'resolved'
+    },
+    {
+      id: 5,
+      date: '2025-02-01',
+      stationId: 1, // Milano Centrale
+      areaManagerId: 1, // Alessio Messina
+      eventType: 'malfunction',
+      eventDetail: 'Il presidio presenta 2 BSS, una non accetta la card promoter, l\'altra i contanti',
+      startTime: '08:00',
+      endTime: '23:59',
+      status: 'pending'
+    },
+    {
+      id: 6,
+      date: '2025-02-27',
+      stationId: 3, // Napoli Centrale
+      areaManagerId: 3, // Leonardo Marsala
+      eventType: 'opportunity',
+      eventDetail: 'Biglietteria chiusa per lavori',
+      startTime: '08:00',
+      endTime: '20:00',
+      status: 'resolved'
+    }
+  ];
+  
+  const stations = [
+    { id: 0, name: 'Tutte' },
+    { id: 1, name: 'Milano Centrale' },
+    { id: 2, name: 'Bologna' },
+    { id: 3, name: 'Napoli Centrale' },
+    { id: 4, name: 'Firenze SMN' },
+    { id: 5, name: 'Venezia SL' }
+  ];
+  
+  const areaManagers = [
+    { id: 1, name: 'Alessio Messina' },
+    { id: 2, name: 'Francesco Barba' },
+    { id: 3, name: 'Leonardo Marsala' },
+    { id: 4, name: 'Luca Scalzo' }
+  ];
+  
+  // Utility functions
+  function formatDate(dateString) {
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  }
+  
+  function getStationName(id) {
+    const station = stations.find(s => s.id === id);
+    return station ? station.name : 'Sconosciuta';
+  }
+  
+  function getManagerName(id) {
+    const manager = areaManagers.find(m => m.id === id);
+    return manager ? manager.name : 'Sconosciuto';
+  }
+  
+  function getEventTypeLabel(type) {
+    switch(type) {
+      case 'malfunction': return 'Malfunzionamento';
+      case 'disruption': return 'Disagio';
+      case 'opportunity': return 'Opportunità';
+      default: return type;
+    }
+  }
+  
+  // UI Functions
+  function showPage(pageId) {
+    // Hide all pages
+    document.querySelectorAll('#dashboard-page, #events-page, #new-event-page').forEach(page => {
+      page.classList.add('hidden');
+    });
+    
+    // Show selected page
+    document.getElementById(pageId + '-page').classList.remove('hidden');
+    
+    // Update title
+    const titles = {
+      'dashboard': 'Dashboard',
+      'events': 'Eventi',
+      'new-event': 'Nuovo Evento'
+    };
+    document.getElementById('page-title').textContent = titles[pageId];
+    
+    // Update menu
+    document.querySelectorAll('.sidebar-menu div').forEach(item => {
+      item.classList.remove('active');
+    });
+    document.querySelector(`.sidebar-menu div[data-page="${pageId}"]`).classList.add('active');
+  }
+  
+  function updateDashboard() {
+    // Count events by type
+    const malfunctions = events.filter(e => e.eventType === 'malfunction').length;
+    const disruptions = events.filter(e => e.eventType === 'disruption').length;
+    const opportunities = events.filter(e => e.eventType === 'opportunity').length;
+    
+    const totalEvents = events.length;
+    
+    // Calculate event counts by station
+    const stationCounts = {};
+    
+    events.forEach(event => {
+      if (event.stationId === 0) {
+        // Impact all stations equally
+        stations.filter(s => s.id !== 0).forEach(station => {
+          stationCounts[station.id] = (stationCounts[station.id] || 0) + (1 / (stations.length - 1));
+        });
+      } else {
+        stationCounts[event.stationId] = (stationCounts[event.stationId] || 0) + 1;
+      }
+    });
+    
+    // Update KPIs
+    document.getElementById('total-events').textContent = totalEvents;
+    document.getElementById('total-malfunctions').textContent = malfunctions;
+    document.getElementById('pending-events').textContent = events.filter(e => e.status === 'pending').length;
+    
+    // Update event type table
+    const impactTable = document.getElementById('impact-table');
+    impactTable.innerHTML = '';
+    
+    [
+      { type: 'malfunction', label: 'Malfunzionamento', count: malfunctions },
+      { type: 'disruption', label: 'Disagio', count: disruptions },
+      { type: 'opportunity', label: 'Opportunità', count: opportunities }
+    ].forEach(row => {
+      const percent = totalEvents > 0 ? (row.count / totalEvents * 100).toFixed(1) + '%' : '0%';
+      
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.label}</td>
+        <td>${row.count}</td>
+        <td>${percent}</td>
+      `;
+      
+      impactTable.appendChild(tr);
+    });
+    
+    // Update stations table
+    const stationsTable = document.getElementById('stations-table');
+    stationsTable.innerHTML = '';
+    
+    Object.entries(stationCounts)
+      .map(([id, count]) => ({
+        id: parseInt(id),
+        name: getStationName(parseInt(id)),
+        count
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .forEach(station => {
+        const percent = totalEvents > 0 ? (station.count / totalEvents * 100).toFixed(1) + '%' : '0%';
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${station.name}</td>
+          <td>${Math.round(station.count * 10) / 10}</td>
+          <td>${percent}</td>
+        `;
+        
+        stationsTable.appendChild(tr);
+      });
+  }
+  
+  function updateEventsTable() {
+    const table = document.getElementById('events-table');
+    table.innerHTML = '';
+    
+    document.getElementById('event-count').textContent = `(${events.length})`;
+    
+    events.forEach(event => {
+      const tr = document.createElement('tr');
+      
+      // Create badge for event type
+      const typeBadge = `<span class="badge badge-${event.eventType}">${getEventTypeLabel(event.eventType)}</span>`;
+      
+      // Create badge for status
+      const statusBadge = `<span class="badge badge-${event.status}">${event.status === 'resolved' ? 'Risolto' : 'In corso'}</span>`;
+      
+      tr.innerHTML = `
+        <td>${formatDate(event.date)}</td>
+        <td>${getStationName(event.stationId)}</td>
+        <td>${typeBadge}</td>
+        <td title="${event.eventDetail}">${event.eventDetail.length > 30 ? event.eventDetail.substring(0, 30) + '...' : event.eventDetail}</td>
+        <td>${getManagerName(event.areaManagerId)}</td>
+        <td>${event.startTime} - ${event.endTime}</td>
+        <td>${statusBadge}</td>
+      `;
+      
+      table.appendChild(tr);
+    });
+  }
+  
+  // Event Handlers
+  document.addEventListener('DOMContentLoaded', () => {
+    // Login handling
+    document.getElementById('login-btn').addEventListener('click', () => {
+      const password = document.getElementById('password').value;
+      
+      if (password === SYSTEM_PASSWORD) {
+        // Hide login screen and show app
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app-container').classList.remove('hidden');
+        
+        // Initialize app
+        updateDashboard();
+        updateEventsTable();
+      } else {
+        // Show error message
+        document.getElementById('error-message').classList.remove('hidden');
+      }
+    });
+    
+    // Enter key for login
+    document.getElementById('password').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('login-btn').click();
+      }
+    });
+    
+    // Setup navigation
+    document.querySelectorAll('.sidebar-menu div').forEach(item => {
+      item.addEventListener('click', () => {
+        showPage(item.getAttribute('data-page'));
+      });
+    });
+    
+    // Add event button
+    document.getElementById('add-event-btn').addEventListener('click', () => {
+      showPage('new-event');
+    });
+    
+    // Cancel button
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+      showPage('events');
+    });
+    
+    // Form submission
+    document.getElementById('event-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      // Create new event
+      const newEvent = {
+        id: events.length + 1,
+        date: document.getElementById('event-date').value,
+        stationId: parseInt(document.getElementById('event-station').value),
+        areaManagerId: parseInt(document.getElementById('event-manager').value),
+        eventType: document.getElementById('event-type').value,
+        eventDetail: document.getElementById('event-detail').value,
+        startTime: document.getElementById('event-start').value,
+        endTime: document.getElementById('event-end').value,
+        status: 'pending'
+      };
+      
+      // Add to events array
+      events.push(newEvent);
+      
+      // Update dashboard and events table
+      updateDashboard();
+      updateEventsTable();
+      
+      // Reset form
+      document.getElementById('event-form').reset();
+      
+      // Show events page
+      showPage('events');
+    });
+  });
+</script>
+
+</body>
+</html>
