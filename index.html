@@ -81,25 +81,27 @@
 <body>
 
 <!-- Login Screen -->
-<div id="login-screen" class="login-container">
-  <div class="login-card">
-    <div class="login-header">
-      <h1>ITALO Event Tracker</h1>
-      <p>Accesso al sistema di monitoraggio eventi</p>
+<div id="login-screen">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <h1>ITALO Event Tracker</h1>
+        <p>Accesso al sistema di monitoraggio eventi</p>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Inserisci la password">
+      </div>
+      <div style="margin-top: 20px;">
+        <button class="btn" style="width: 100%;" id="login-btn">Accedi</button>
+      </div>
+      <div id="error-message" class="error-message hidden">Password non corretta. Riprova.</div>
     </div>
-    <div class="form-group">
-      <label for="password">Password</label>
-      <input type="password" id="password" placeholder="Inserisci la password">
-    </div>
-    <div style="margin-top: 20px;">
-      <button class="btn" style="width: 100%;" id="login-btn">Accedi</button>
-    </div>
-    <div id="error-message" class="error-message hidden">Password non corretta. Riprova.</div>
   </div>
 </div>
 
 <!-- Main Container (hidden initially) -->
-<div id="app-container" class="container hidden">
+<div id="app-container" class="hidden">
   <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-header">ITALO Event Tracker</div>
@@ -573,11 +575,11 @@
       table.appendChild(tr);
     });
   }
-  
+
   // Event Handlers
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', function() {
     // Login handling
-    document.getElementById('login-btn').addEventListener('click', () => {
+    document.getElementById('login-btn').addEventListener('click', function() {
       const password = document.getElementById('password').value;
       
       if (password === SYSTEM_PASSWORD) {
@@ -595,31 +597,31 @@
     });
     
     // Enter key for login
-    document.getElementById('password').addEventListener('keypress', (e) => {
+    document.getElementById('password').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
         document.getElementById('login-btn').click();
       }
     });
     
     // Setup navigation
-    document.querySelectorAll('.sidebar-menu div').forEach(item => {
-      item.addEventListener('click', () => {
+    document.querySelectorAll('.sidebar-menu div').forEach(function(item) {
+      item.addEventListener('click', function() {
         showPage(item.getAttribute('data-page'));
       });
     });
     
     // Add event button
-    document.getElementById('add-event-btn').addEventListener('click', () => {
+    document.getElementById('add-event-btn').addEventListener('click', function() {
       showPage('new-event');
     });
     
     // Cancel button
-    document.getElementById('cancel-btn').addEventListener('click', () => {
+    document.getElementById('cancel-btn').addEventListener('click', function() {
       showPage('events');
     });
     
     // Form submission
-    document.getElementById('event-form').addEventListener('submit', (e) => {
+    document.getElementById('event-form').addEventListener('submit', function(e) {
       e.preventDefault();
       
       // Create new event
